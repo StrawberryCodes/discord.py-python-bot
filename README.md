@@ -9,9 +9,14 @@ import datetime
 from typing import Optional
 
 
-# ╭───────────────୨ৎ───────────────╮
-#           CONFIGURAÇÃO
-# ╰───────────────୨ৎ───────────────╯
+# ♡ stickers / referências visuais
+# ୨ৎ https://giphy.com/stickers/lovebite-sugarbunnies-bruisemylegs-O8Gip1EcuhvnOKlZDl
+# ୨ৎ https://giphy.com/stickers/art-animation-sickies-X6VzEwRJCXIoOlyLhy
+# ୨ৎ https://giphy.com/stickers/wildflowercases-wildflower-bows-coquette-29NPoyouyhDYZfousy
+# ୨ৎ https://giphy.com/stickers/art-animation-sickies-dcANMEanwDsrUR1QS1
+
+
+# ♡ configuração
 
 TOKEN = "SEU_TOKEN_AQUI"
 PREFIXO = "!"
@@ -26,9 +31,7 @@ bot = commands.Bot(
 )
 
 
-# ╭───────────────୨ৎ───────────────╮
-#           BANCO DE DADOS
-# ╰───────────────୨ৎ───────────────╯
+# ♡ banco de dados
 
 class EconomiaDB:
 
@@ -80,14 +83,11 @@ class EconomiaDB:
 db = EconomiaDB()
 
 
-# ╭───────────────୨ৎ───────────────╮
-#                LOJA
-# ╰───────────────୨ৎ───────────────╯
+# ♡ loja
 
 if not db.data["loja"]:
 
     db.data["loja"] = {
-
         "nitro_basic": {
             "nome": "🎈 Nitro Simulado",
             "preco": 100,
@@ -108,15 +108,12 @@ if not db.data["loja"]:
             "descricao": "Cargo VIP no servidor",
             "duracao": 30
         }
-
     }
 
     db.salvar()
 
 
-# ╭───────────────୨ৎ───────────────╮
-#               EVENTOS
-# ╰───────────────୨ৎ───────────────╯
+# ♡ eventos
 
 @bot.event
 async def on_ready():
@@ -126,9 +123,7 @@ async def on_ready():
         verificar_nitro_expirar.start()
 
 
-# ╭───────────────୨ৎ───────────────╮
-#             !SALDO
-# ╰───────────────୨ৎ───────────────╯
+# ♡ comando: saldo
 
 @bot.command()
 async def saldo(ctx, membro: Optional[discord.Member] = None):
@@ -164,9 +159,7 @@ async def saldo(ctx, membro: Optional[discord.Member] = None):
     await ctx.send(embed=embed)
 
 
-# ╭───────────────୨ৎ───────────────╮
-#             !DAILY
-# ╰───────────────୨ৎ───────────────╯
+# ♡ comando: daily
 
 @bot.command()
 @commands.cooldown(1, 86400, commands.BucketType.user)
@@ -178,7 +171,6 @@ async def daily(ctx):
     streak = 1
 
     if user["ultimo_daily"]:
-
         ultimo = datetime.date.fromisoformat(
             user["ultimo_daily"]
         )
@@ -216,9 +208,7 @@ async def daily(ctx):
     await ctx.send(embed=embed)
 
 
-# ╭───────────────୨ৎ───────────────╮
-#            !TRABALHAR
-# ╰───────────────୨ৎ───────────────╯
+# ♡ comando: trabalhar
 
 @bot.command()
 @commands.cooldown(1, 3600, commands.BucketType.user)
@@ -235,7 +225,6 @@ async def trabalhar(ctx):
     ganho = random.randint(minimo, maximo)
 
     user = db.get_usuario(ctx.author.id)
-
     user["dinheiro"] += ganho
 
     db.atualizar_usuario(ctx.author.id, user)
@@ -246,9 +235,7 @@ async def trabalhar(ctx):
     )
 
 
-# ╭───────────────୨ৎ───────────────╮
-#              !LOJA
-# ╰───────────────୨ৎ───────────────╯
+# ♡ comando: loja
 
 @bot.command()
 async def loja(ctx):
@@ -259,22 +246,16 @@ async def loja(ctx):
     )
 
     for item_id, item in db.data["loja"].items():
-
         embed.add_field(
             name=f"{item['nome']} — 🪙 {item['preco']}",
-            value=(
-                f"{item['descricao']}\n"
-                f"ID: `{item_id}`"
-            ),
+            value=f"{item['descricao']}\nID: `{item_id}`",
             inline=False
         )
 
     await ctx.send(embed=embed)
 
 
-# ╭───────────────୨ৎ───────────────╮
-#             !COMPRAR
-# ╰───────────────୨ৎ───────────────╯
+# ♡ comando: comprar
 
 @bot.command()
 async def comprar(ctx, item_id: str = None):
@@ -334,9 +315,7 @@ async def comprar(ctx, item_id: str = None):
     await ctx.send(mensagem)
 
 
-# ╭───────────────୨ৎ───────────────╮
-#               !RANK
-# ╰───────────────୨ৎ───────────────╯
+# ♡ comando: rank
 
 @bot.command()
 async def rank(ctx):
@@ -344,7 +323,6 @@ async def rank(ctx):
     ranking = []
 
     for uid, data in db.data["usuarios"].items():
-
         try:
             user = await bot.fetch_user(int(uid))
 
@@ -366,7 +344,6 @@ async def rank(ctx):
     )
 
     for i, (nome, dinheiro) in enumerate(ranking[:10], 1):
-
         embed.add_field(
             name=f"{i}º {nome}",
             value=f"🪙 {dinheiro}",
@@ -376,9 +353,7 @@ async def rank(ctx):
     await ctx.send(embed=embed)
 
 
-# ╭───────────────୨ৎ───────────────╮
-#          TASK: EXPIRAÇÃO
-# ╰───────────────୨ৎ───────────────╯
+# ♡ tarefa: expiração do Nitro
 
 @tasks.loop(hours=24)
 async def verificar_nitro_expirar():
@@ -393,7 +368,6 @@ async def verificar_nitro_expirar():
             if agora > datetime.datetime.fromisoformat(
                 user["nitro_expira"]
             ):
-
                 user["nitro_simulado"] = False
                 del user["nitro_expira"]
 
@@ -403,14 +377,10 @@ async def verificar_nitro_expirar():
         db.salvar()
 
 
-# ╭───────────────୨ৎ───────────────╮
-#              START
-# ╰───────────────୨ৎ───────────────╯
+# ♡ inicialização
 
 if TOKEN == "SEU_TOKEN_AQUI":
-
     print("♡ Configure o TOKEN do bot!")
 
 else:
-
     bot.run(TOKEN)
