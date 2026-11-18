@@ -1,332 +1,416 @@
 
-
-"https://giphy.com/stickers/pixel-sanrio-hello-kitty-BEAUgdz2vtLubrfTc3"
-
-
-# discord.py-python-bot
-
-Bot Discord desenvolvido em Python usando discord.py.
-
-## Comandos
-
-- !saldo
-- !daily
-- !trabalhar
-- !loja
-- !comprar
-- !rank
-
-## Instalação
-
-1. Instale as dependências:
-
-pip install -r requirements.txt
-
-2. Configure o token do Discord.
-
-3. Execute:
-
-python💗
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-code:
-
-
 import discord
 from discord.ext import commands, tasks
+
 import json
 import random
 import datetime
+
 from typing import Optional
 
-================= CONFIGURAÇÃO =================
 
-TOKEN =PREFIXO = "!"
+# ╭───────────────୨ৎ───────────────╮
+#           CONFIGURAÇÃO
+# ╰───────────────୨ৎ───────────────╯
+
+TOKEN = "SEU_TOKEN_AQUI"
+PREFIXO = "!"
 
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
-bot = commands.Bot(command_prefix=PREFIXO, intents=intents)
+bot = commands.Bot(
+    command_prefix=PREFIXO,
+    intents=intents
+)
 
-================= BANCO DE DADOS =================
+
+# ╭───────────────୨ৎ───────────────╮
+#           BANCO DE DADOS
+# ╰───────────────୨ৎ───────────────╯
 
 class EconomiaDB:
-def init(self):
-self.arquivo = "economia.json"
-self.carregar()
 
-def carregar(self):  
-    try:  
-        with open(self.arquivo, "r", encoding="utf-8") as f:  
-            self.data = json.load(f)  
-    except FileNotFoundError:  
-        self.data = {"usuarios": {}, "loja": {}}  
-        self.salvar()  
+    def __init__(self):
+        self.arquivo = "economia.json"
+        self.carregar()
 
-def salvar(self):  
-    with open(self.arquivo, "w", encoding="utf-8") as f:  
-        json.dump(self.data, f, indent=4, ensure_ascii=False)  
+    def carregar(self):
+        try:
+            with open(self.arquivo, "r", encoding="utf-8") as f:
+                self.data = json.load(f)
 
-def get_usuario(self, user_id: int):  
-    user_id = str(user_id)  
-    if user_id not in self.data["usuarios"]:  
-        self.data["usuarios"][user_id] = {  
-            "dinheiro": 100,  
-            "inventario": [],  
-            "ultimo_daily": None,  
-            "daily_streak": 1,  
-            "nitro_simulado": False  
-        }  
-        self.salvar()  
-    return self.data["usuarios"][user_id]  
+        except FileNotFoundError:
+            self.data = {
+                "usuarios": {},
+                "loja": {}
+            }
+            self.salvar()
 
-def atualizar_usuario(self, user_id: int, dados: dict):  
-    self.data["usuarios"][str(user_id)] = dados  
-    self.salvar()
+    def salvar(self):
+        with open(self.arquivo, "w", encoding="utf-8") as f:
+            json.dump(
+                self.data,
+                f,
+                indent=4,
+                ensure_ascii=False
+            )
+
+    def get_usuario(self, user_id: int):
+        user_id = str(user_id)
+
+        if user_id not in self.data["usuarios"]:
+            self.data["usuarios"][user_id] = {
+                "dinheiro": 100,
+                "inventario": [],
+                "ultimo_daily": None,
+                "daily_streak": 1,
+                "nitro_simulado": False
+            }
+            self.salvar()
+
+        return self.data["usuarios"][user_id]
+
+    def atualizar_usuario(self, user_id: int, dados: dict):
+        self.data["usuarios"][str(user_id)] = dados
+        self.salvar()
+
 
 db = EconomiaDB()
 
-================= LOJA =================
+
+# ╭───────────────୨ৎ───────────────╮
+#                LOJA
+# ╰───────────────୨ৎ───────────────╯
 
 if not db.data["loja"]:
-db.data["loja"] = {
-"nitro_basic": {
-"nome": "🎈 Nitro Simulado",
-"preco": 100,
-"descricao": "Emblema de Nitro por 7 dias",
-"duracao": 7
-},
-"nitro_boost": {
-"nome": "🚀 Nitro Boost Simulado",
-"preco": 200,
-"descricao": "Emblema especial por 30 dias",
-"duracao": 30
-},
-"vip_pass": {
-"nome": "👑 Passe VIP",
-"preco": 500,
-"descricao": "Cargo VIP no servidor",
-"duracao": 30
-}
-}
-db.salvar()
 
-================= EVENTOS =================
+    db.data["loja"] = {
+
+        "nitro_basic": {
+            "nome": "🎈 Nitro Simulado",
+            "preco": 100,
+            "descricao": "Emblema de Nitro por 7 dias",
+            "duracao": 7
+        },
+
+        "nitro_boost": {
+            "nome": "🚀 Nitro Boost Simulado",
+            "preco": 200,
+            "descricao": "Emblema especial por 30 dias",
+            "duracao": 30
+        },
+
+        "vip_pass": {
+            "nome": "👑 Passe VIP",
+            "preco": 500,
+            "descricao": "Cargo VIP no servidor",
+            "duracao": 30
+        }
+
+    }
+
+    db.salvar()
+
+
+# ╭───────────────୨ৎ───────────────╮
+#               EVENTOS
+# ╰───────────────୨ৎ───────────────╯
 
 @bot.event
 async def on_ready():
-print(f"✅ {bot.user} online!")
-verificar_nitro_expirar.start()
+    print(f"♡ {bot.user} online!")
 
-================= COMANDOS =================
+    if not verificar_nitro_expirar.is_running():
+        verificar_nitro_expirar.start()
+
+
+# ╭───────────────୨ৎ───────────────╮
+#             !SALDO
+# ╰───────────────୨ৎ───────────────╯
 
 @bot.command()
 async def saldo(ctx, membro: Optional[discord.Member] = None):
-membro = membro or ctx.author
-user = db.get_usuario(membro.id)
 
-embed = discord.Embed(  
-    title=f"💰 Carteira de {membro.name}",  
-    color=discord.Color.gold()  
-)  
-embed.add_field(name="Dinheiro", value=f"🪙 {user['dinheiro']}", inline=False)  
+    membro = membro or ctx.author
+    user = db.get_usuario(membro.id)
 
-if user["nitro_simulado"]:  
-    embed.add_field(name="Nitro", value="🎈 Ativo (Simulado)", inline=False)  
+    embed = discord.Embed(
+        title=f"♡ Carteira de {membro.name}",
+        color=discord.Color.gold()
+    )
 
-if user["inventario"]:  
-    embed.add_field(  
-        name="Inventário",  
-        value=", ".join(user["inventario"]),  
-        inline=False  
-    )  
+    embed.add_field(
+        name="🪙 Dinheiro",
+        value=f"{user['dinheiro']} moedas",
+        inline=False
+    )
 
-await ctx.send(embed=embed)
+    if user["nitro_simulado"]:
+        embed.add_field(
+            name="🎈 Nitro",
+            value="Ativo (Simulado)",
+            inline=False
+        )
 
----------------- DAILY ----------------
+    if user["inventario"]:
+        embed.add_field(
+            name="🎀 Inventário",
+            value=", ".join(user["inventario"]),
+            inline=False
+        )
+
+    await ctx.send(embed=embed)
+
+
+# ╭───────────────୨ৎ───────────────╮
+#             !DAILY
+# ╰───────────────୨ৎ───────────────╯
 
 @bot.command()
 @commands.cooldown(1, 86400, commands.BucketType.user)
 async def daily(ctx):
-user = db.get_usuario(ctx.author.id)
-hoje = datetime.date.today()
 
-streak = 1  
-if user["ultimo_daily"]:  
-    ultimo = datetime.date.fromisoformat(user["ultimo_daily"])  
-    if (hoje - ultimo).days == 1:  
-        streak = min(7, user["daily_streak"] + 1)  
+    user = db.get_usuario(ctx.author.id)
+    hoje = datetime.date.today()
 
-base = random.randint(100, 300)  
-bonus = streak * 50  
-total = base + bonus  
+    streak = 1
 
-user["dinheiro"] += total  
-user["ultimo_daily"] = hoje.isoformat()  
-user["daily_streak"] = streak  
+    if user["ultimo_daily"]:
 
-db.atualizar_usuario(ctx.author.id, user)  
+        ultimo = datetime.date.fromisoformat(
+            user["ultimo_daily"]
+        )
 
-embed = discord.Embed(  
-    title="🎁 Daily Resgatado",  
-    description=f"Você ganhou **{total} moedas**!",  
-    color=discord.Color.green()  
-)  
-embed.add_field(name="Base", value=base)  
-embed.add_field(name="Streak", value=f"x{streak} (+{bonus})")  
-embed.add_field(name="Saldo", value=user["dinheiro"], inline=False)  
+        if (hoje - ultimo).days == 1:
+            streak = min(7, user["daily_streak"] + 1)
 
-await ctx.send(embed=embed)
+    base = random.randint(100, 300)
+    bonus = streak * 50
+    total = base + bonus
 
----------------- TRABALHAR ----------------
+    user["dinheiro"] += total
+    user["ultimo_daily"] = hoje.isoformat()
+    user["daily_streak"] = streak
+
+    db.atualizar_usuario(ctx.author.id, user)
+
+    embed = discord.Embed(
+        title="🎁 Daily Resgatado",
+        description=f"Você ganhou **{total} moedas**!",
+        color=discord.Color.green()
+    )
+
+    embed.add_field(name="♡ Base", value=base)
+    embed.add_field(
+        name="୨ৎ Streak",
+        value=f"x{streak} (+{bonus})"
+    )
+    embed.add_field(
+        name="🪙 Saldo",
+        value=user["dinheiro"],
+        inline=False
+    )
+
+    await ctx.send(embed=embed)
+
+
+# ╭───────────────୨ৎ───────────────╮
+#            !TRABALHAR
+# ╰───────────────୨ৎ───────────────╯
 
 @bot.command()
 @commands.cooldown(1, 3600, commands.BucketType.user)
 async def trabalhar(ctx):
-trabalhos = [
-("Programador", 1500, 3000),
-("Designer", 1000, 2500),
-("Moderador", 800, 2000),
-("Tester", 1200, 2800)
-]
 
-nome, minimo, maximo = random.choice(trabalhos)  
-ganho = random.randint(minimo, maximo)  
+    trabalhos = [
+        ("Programador", 1500, 3000),
+        ("Designer", 1000, 2500),
+        ("Moderador", 800, 2000),
+        ("Tester", 1200, 2800)
+    ]
 
-user = db.get_usuario(ctx.author.id)  
-user["dinheiro"] += ganho  
-db.atualizar_usuario(ctx.author.id, user)  
+    nome, minimo, maximo = random.choice(trabalhos)
+    ganho = random.randint(minimo, maximo)
 
-await ctx.send(  
-    f"💼 Você trabalhou como **{nome}** e ganhou **{ganho} moedas**!"  
-)
+    user = db.get_usuario(ctx.author.id)
 
----------------- LOJA ----------------
+    user["dinheiro"] += ganho
+
+    db.atualizar_usuario(ctx.author.id, user)
+
+    await ctx.send(
+        f"♡ Você trabalhou como **{nome}** "
+        f"e ganhou **{ganho} moedas**!"
+    )
+
+
+# ╭───────────────୨ৎ───────────────╮
+#              !LOJA
+# ╰───────────────୨ৎ───────────────╯
 
 @bot.command()
 async def loja(ctx):
-embed = discord.Embed(
-title="🛒 Loja",
-color=discord.Color.purple()
-)
 
-for item_id, item in db.data["loja"].items():  
-    embed.add_field(  
-        name=f"{item['nome']} — 🪙 {item['preco']}",  
-        value=f"{item['descricao']}\nID: `{item_id}`",  
-        inline=False  
-    )  
+    embed = discord.Embed(
+        title="🎀 Loja",
+        color=discord.Color.purple()
+    )
 
-await ctx.send(embed=embed)
+    for item_id, item in db.data["loja"].items():
 
----------------- COMPRAR ----------------
+        embed.add_field(
+            name=f"{item['nome']} — 🪙 {item['preco']}",
+            value=(
+                f"{item['descricao']}\n"
+                f"ID: `{item_id}`"
+            ),
+            inline=False
+        )
+
+    await ctx.send(embed=embed)
+
+
+# ╭───────────────୨ৎ───────────────╮
+#             !COMPRAR
+# ╰───────────────୨ৎ───────────────╯
 
 @bot.command()
 async def comprar(ctx, item_id: str = None):
-if not item_id or item_id not in db.data["loja"]:
-await ctx.send("❌ Item inválido.")
-return
 
-item = db.data["loja"][item_id]  
-user = db.get_usuario(ctx.author.id)  
+    if not item_id or item_id not in db.data["loja"]:
+        await ctx.send("♡ Item inválido.")
+        return
 
-if user["dinheiro"] < item["preco"]:  
-    await ctx.send("❌ Dinheiro insuficiente.")  
-    return  
+    item = db.data["loja"][item_id]
+    user = db.get_usuario(ctx.author.id)
 
-user["dinheiro"] -= item["preco"]  
-mensagem = f"🎉 Você comprou **{item['nome']}**!"  
+    if user["dinheiro"] < item["preco"]:
+        await ctx.send("♡ Dinheiro insuficiente.")
+        return
 
-if item_id.startswith("nitro"):  
-    user["nitro_simulado"] = True  
-    user["nitro_expira"] = (  
-        datetime.datetime.now() + datetime.timedelta(days=item["duracao"])  
-    ).isoformat()  
-    mensagem += "\n⚠️ Nitro simulado (não é real)."  
+    user["dinheiro"] -= item["preco"]
 
-elif item_id == "vip_pass":  
-    try:  
-        vip = discord.utils.get(ctx.guild.roles, name="VIP")  
-        if not vip:  
-            vip = await ctx.guild.create_role(  
-                name="VIP",  
-                color=discord.Color.gold()  
-            )  
-        await ctx.author.add_roles(vip)  
-        mensagem += "\n👑 Cargo VIP adicionado!"  
-    except:  
-        mensagem += "\n⚠️ Sem permissão para criar cargo."  
+    mensagem = f"🎀 Você comprou **{item['nome']}**!"
 
-else:  
-    user["inventario"].append(item["nome"])  
+    if item_id.startswith("nitro"):
 
-db.atualizar_usuario(ctx.author.id, user)  
-await ctx.send(mensagem)
+        user["nitro_simulado"] = True
 
----------------- RANK ----------------
+        user["nitro_expira"] = (
+            datetime.datetime.now()
+            + datetime.timedelta(days=item["duracao"])
+        ).isoformat()
+
+        mensagem += "\n♡ Nitro simulado (não é real)."
+
+    elif item_id == "vip_pass":
+
+        try:
+            vip = discord.utils.get(
+                ctx.guild.roles,
+                name="VIP"
+            )
+
+            if not vip:
+                vip = await ctx.guild.create_role(
+                    name="VIP",
+                    color=discord.Color.gold()
+                )
+
+            await ctx.author.add_roles(vip)
+
+            mensagem += "\n👑 Cargo VIP adicionado!"
+
+        except:
+            mensagem += "\n♡ Sem permissão para criar cargo."
+
+    else:
+        user["inventario"].append(item["nome"])
+
+    db.atualizar_usuario(ctx.author.id, user)
+
+    await ctx.send(mensagem)
+
+
+# ╭───────────────୨ৎ───────────────╮
+#               !RANK
+# ╰───────────────୨ৎ───────────────╯
 
 @bot.command()
 async def rank(ctx):
-ranking = []
-for uid, data in db.data["usuarios"].items():
-try:
-user = await bot.fetch_user(int(uid))
-ranking.append((user.name, data["dinheiro"]))
-except:
-pass
 
-ranking.sort(key=lambda x: x[1], reverse=True)  
+    ranking = []
 
-embed = discord.Embed(  
-    title="🏆 Ranking",  
-    color=discord.Color.gold()  
-)  
+    for uid, data in db.data["usuarios"].items():
 
-for i, (nome, dinheiro) in enumerate(ranking[:10], 1):  
-    embed.add_field(  
-        name=f"{i}º {nome}",  
-        value=f"🪙 {dinheiro}",  
-        inline=False  
-    )  
+        try:
+            user = await bot.fetch_user(int(uid))
 
-await ctx.send(embed=embed)
+            ranking.append(
+                (user.name, data["dinheiro"])
+            )
 
-================= TASK =================
+        except:
+            pass
+
+    ranking.sort(
+        key=lambda x: x[1],
+        reverse=True
+    )
+
+    embed = discord.Embed(
+        title="🏆 Ranking",
+        color=discord.Color.gold()
+    )
+
+    for i, (nome, dinheiro) in enumerate(ranking[:10], 1):
+
+        embed.add_field(
+            name=f"{i}º {nome}",
+            value=f"🪙 {dinheiro}",
+            inline=False
+        )
+
+    await ctx.send(embed=embed)
+
+
+# ╭───────────────୨ৎ───────────────╮
+#          TASK: EXPIRAÇÃO
+# ╰───────────────୨ৎ───────────────╯
 
 @tasks.loop(hours=24)
 async def verificar_nitro_expirar():
-agora = datetime.datetime.now()
-mudou = False
 
-for user in db.data["usuarios"].values():  
-    if user.get("nitro_simulado") and "nitro_expira" in user:  
-        if agora > datetime.datetime.fromisoformat(user["nitro_expira"]):  
-            user["nitro_simulado"] = False  
-            del user["nitro_expira"]  
-            mudou = True  
+    agora = datetime.datetime.now()
+    mudou = False
 
-if mudou:  
-    db.salvar()
+    for user in db.data["usuarios"].values():
 
-================= START =================
+        if user.get("nitro_simulado") and "nitro_expira" in user:
+
+            if agora > datetime.datetime.fromisoformat(
+                user["nitro_expira"]
+            ):
+
+                user["nitro_simulado"] = False
+                del user["nitro_expira"]
+
+                mudou = True
+
+    if mudou:
+        db.salvar()
+
+
+# ╭───────────────୨ৎ───────────────╮
+#              START
+# ╰───────────────୨ৎ───────────────╯
 
 if TOKEN == "SEU_TOKEN_AQUI":
-print("❌ Configure o TOKEN do bot!")
+
+    print("♡ Configure o TOKEN do bot!")
+
 else:
-bot.run(TOKEN)
+
+    bot.run(TOKEN)
